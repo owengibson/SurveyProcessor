@@ -7,14 +7,24 @@ namespace SurveyProcessor
 {
     public class MainForm : Form
     {
+        enum ProcessingMode { Description, Consent, Question }
+
+        // Preferences
+        private char inputColStr = 'C'; // Column in input sheet to read content from
+        private int inputCol;
+        private char templateColStr = 'H'; // Column in template sheet to insert content
+        private int templateCol;
+
+        // User input inits
         private string inputFilePath = "";
         private string templateFilePath = "";
-        private string outputFilePath = "";
+        private string outputFolderPath = "";
         private string surveyTitle = "";
 
+        // UI Props
         private Label lblInputFile;
         private Label lblTemplateFile;
-        private Label lblOutputFile;
+        private Label lblOutputFolder;
         private Label lblSurveyTitle;
         private Button btnSelectInput;
         private Button btnSelectTemplate;
@@ -22,13 +32,16 @@ namespace SurveyProcessor
         private Button btnProcess;
         private TextBox txtInputFile;
         private TextBox txtTemplateFile;
-        private TextBox txtOutputFile;
+        private TextBox txtOutputFolder;
         private TextBox txtSurveyTitle;
         private ProgressBar progressBar;
         private RichTextBox txtLog;
 
         public MainForm()
         {
+            inputCol = char.ToUpper(inputColStr) - 64;
+            templateCol = char.ToUpper(templateColStr) - 64;
+
             InitializeComponent();
         }
 
@@ -54,9 +67,9 @@ namespace SurveyProcessor
             btnSelectTemplate = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, 99), Size = new System.Drawing.Size(85, 35) };
             btnSelectTemplate.Click += BtnSelectTemplate_Click;
 
-            // Output file selection
-            lblOutputFile = new Label() { Text = "Output File:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 23) };
-            txtOutputFile = new TextBox() { Location = new System.Drawing.Point(130, 140), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
+            // Output folder selection
+            lblOutputFolder = new Label() { Text = "Output Folder:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 23) };
+            txtOutputFolder = new TextBox() { Location = new System.Drawing.Point(130, 140), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
             btnSelectOutput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, 139), Size = new System.Drawing.Size(85, 35) };
             btnSelectOutput.Click += BtnSelectOutput_Click;
 
@@ -75,7 +88,7 @@ namespace SurveyProcessor
                 lblSurveyTitle, txtSurveyTitle,
                 lblInputFile, txtInputFile, btnSelectInput,
                 lblTemplateFile, txtTemplateFile, btnSelectTemplate,
-                lblOutputFile, txtOutputFile, btnSelectOutput,
+                lblOutputFolder, txtOutputFolder, btnSelectOutput,
                 btnProcess, progressBar, txtLog
             });
         }
@@ -110,14 +123,13 @@ namespace SurveyProcessor
 
         private void BtnSelectOutput_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            using (FolderBrowserDialog saveFileDialog = new FolderBrowserDialog())
             {
-                saveFileDialog.Filter = "Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*";
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    outputFilePath = saveFileDialog.FileName;
-                    txtOutputFile.Text = outputFilePath;
-                    LogMessage($"Output file path set: {Path.GetFileName(outputFilePath)}");
+                    outputFolderPath = saveFileDialog.SelectedPath;
+                    txtOutputFolder.Text = outputFolderPath;
+                    LogMessage($"Output file path set: {Path.GetFileName(outputFolderPath)}");
                 }
             }
         }
@@ -132,9 +144,9 @@ namespace SurveyProcessor
                 MessageBox.Show("Please enter a survey title.", "Missing Survey Title", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
-            if (string.IsNullOrEmpty(inputFilePath) || string.IsNullOrEmpty(templateFilePath) || string.IsNullOrEmpty(outputFilePath))
+            if (string.IsNullOrEmpty(inputFilePath) || string.IsNullOrEmpty(templateFilePath) || string.IsNullOrEmpty(outputFolderPath))
             {
-                MessageBox.Show("Please select all required files.", "Missing Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select all required files or folders.", "Missing Files/Folders", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -175,8 +187,9 @@ namespace SurveyProcessor
                         progressBar.Value = 80;
 
                         // Save the modified template as the output file
-                        templateWorkbook.SaveAs(outputFilePath);
-                        LogMessage($"Output file saved: {Path.GetFileName(outputFilePath)}");
+                        string outputFile = $"{outputFolderPath}\\{surveyTitle}_Processed.xlsx";
+                        templateWorkbook.SaveAs(outputFile);
+                        LogMessage($"Output file saved: {Path.GetFileName(outputFile)}");
 
                         progressBar.Value = 100;
                         LogMessage("Processing completed successfully!");
@@ -199,47 +212,6 @@ namespace SurveyProcessor
 
         private void PerformDataOperations(IXLWorksheet inputSheet, IXLWorksheet templateSheet)
         {
-            // This is where you'll implement your specific logic
-            // Example operations:
-
-            // Read values from input sheet
-            var cellA1Value = inputSheet.Cell("A1").GetValue<string>();
-            var cellB1Value = inputSheet.Cell("B1").GetValue<string>();
-            LogMessage($"Read from input: A1={cellA1Value}, B1={cellB1Value}");
-
-            // Fill template based on input values
-            // Example: If input A1 contains "Name", put it in template C1
-            if (!string.IsNullOrEmpty(cellA1Value))
-            {
-                templateSheet.Cell("C1").Value = cellA1Value;
-                LogMessage($"Set template C1 to: {cellA1Value}");
-            }
-
-            // Example: Copy data from input B column to template D column
-            for (int row = 1; row <= 10; row++) // Adjust range as needed
-            {
-                var sourceValue = inputSheet.Cell(row, 2).GetValue<string>(); // Column B
-                if (!string.IsNullOrEmpty(sourceValue))
-                {
-                    templateSheet.Cell(row, 4).Value = sourceValue; // Column D
-                }
-            }
-
-            // Example: Conditional logic
-            var statusValue = inputSheet.Cell("E1").GetValue<string>();
-            if (statusValue == "Active")
-            {
-                templateSheet.Cell("F1").Value = "Processed";
-                templateSheet.Cell("F1").Style.Fill.BackgroundColor = XLColor.Green;
-            }
-            else
-            {
-                templateSheet.Cell("F1").Value = "Pending";
-                templateSheet.Cell("F1").Style.Fill.BackgroundColor = XLColor.Yellow;
-            }
-
-            LogMessage("Data operations completed.");
-
             // TODO: Replace this section with your specific logic
             // You can:
             // - Read values: inputSheet.Cell("A1").GetValue<string>()
@@ -247,6 +219,61 @@ namespace SurveyProcessor
             // - Loop through ranges: inputSheet.Range("A1:Z100")
             // - Apply formatting: cell.Style.Fill.BackgroundColor = XLColor.Blue
             // - Use formulas: templateSheet.Cell("C1").FormulaA1 = "=A1+B1"
+
+            // Title
+            var titleCell = templateSheet.Cell(8, templateCol);
+            titleCell.Value = surveyTitle;
+            titleCell.Style.Font.Bold = true;
+            titleCell.Style.Font.Underline = XLFontUnderlineValues.Single;
+            titleCell.Style.Font.FontSize = 16d;
+
+            // About the survey
+            var aboutCell = templateSheet.Cell(10, templateCol);
+            aboutCell.Value = "About the survey";
+            aboutCell.Style.Font.Bold = true;
+
+            ProcessingMode mode = ProcessingMode.Description;
+
+            var colLength = inputSheet.Column(inputCol).LastCellUsed().Address.RowNumber;
+            for (int row = 3; row <= colLength; row++)
+            {
+                int templateRow = row + 8;
+                var cell = inputSheet.Cell(row, inputCol);
+                var target = templateSheet.Cell(templateRow, templateCol);
+
+                switch (mode)
+                {
+                    case ProcessingMode.Description:
+                        // Description
+                        if (cell.Value.ToString().ToLower() == "consent")
+                        {
+                            target.Value = "Consent";
+                            target.Style.Font.Bold = true;
+                            mode = ProcessingMode.Consent;
+                            continue;
+                        }
+                        target.Value = cell.Value;
+                        break;
+
+                    case ProcessingMode.Consent:
+                        // Consent
+                        target.Value = cell.Value;
+                        mode = ProcessingMode.Question;
+                        break;
+
+                    case ProcessingMode.Question:
+                        // Question
+                        break;
+
+                    default:
+                        break;
+                }
+                target.Style.Alignment.WrapText = true;
+                templateSheet.Row(row).AdjustToContents();
+                templateSheet.Row(row).ClearHeight();
+            }
+
+            LogMessage("Data operations completed.");
         }
 
         private void LogMessage(string message)
