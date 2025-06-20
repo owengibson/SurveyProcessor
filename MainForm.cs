@@ -10,10 +10,14 @@ namespace SurveyProcessor
         enum ProcessingMode { Description, Consent, Question }
 
         // Preferences
-        private char inputColStr = 'C'; // Column in input sheet to read content from
+        private char inputColChar = 'C'; // Column in input sheet to read content from
         private int inputCol;
-        private char templateColStr = 'H'; // Column in template sheet to insert content
+        private char templateColChar = 'H'; // Column in template sheet to insert content
         private int templateCol;
+
+        // New parameters
+        private string qID = "";    // Short Question ID Prefix
+        private string catID = "";  // Long Catalogue ID Prefix
 
         // User input inits
         private string inputFilePath = "";
@@ -26,66 +30,146 @@ namespace SurveyProcessor
         private Label lblTemplateFile;
         private Label lblOutputFolder;
         private Label lblSurveyTitle;
-        private Button btnSelectInput;
-        private Button btnSelectTemplate;
-        private Button btnSelectOutput;
-        private Button btnProcess;
+
+        // New UI Props
+        private Label lblInputCol;
+        private Label lblQID;
+        private Label lblCatID;
         private TextBox txtInputFile;
         private TextBox txtTemplateFile;
         private TextBox txtOutputFolder;
         private TextBox txtSurveyTitle;
+        private TextBox txtInputCol;
+        private TextBox txtQID;
+        private TextBox txtCatID;
+        private Button btnSelectInput;
+        private Button btnSelectTemplate;
+        private Button btnSelectOutput;
+        private Button btnProcess;
         private ProgressBar progressBar;
         private RichTextBox txtLog;
 
         public MainForm()
         {
-            inputCol = char.ToUpper(inputColStr) - 64;
-            templateCol = char.ToUpper(templateColStr) - 64;
+            inputCol = char.ToUpper(inputColChar) - 64;
+            templateCol = char.ToUpper(templateColChar) - 64;
 
             InitializeComponent();
         }
 
         private void InitializeComponent()
         {
-            this.Size = new System.Drawing.Size(600, 550);
+            this.Size = new System.Drawing.Size(600, 650); // Increased height for new fields
             this.Text = "Excel Survey Processor";
             this.StartPosition = FormStartPosition.CenterScreen;
 
+            int y = 20;
+
             // Survey title input
-            lblSurveyTitle = new Label() { Text = "Survey Title", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 23) };
-            txtSurveyTitle = new TextBox() { Location = new System.Drawing.Point(130, 20), Size = new System.Drawing.Size(300, 23) };
+            lblSurveyTitle = new Label() { Text = "Survey Title", Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(120, 23) };
+            txtSurveyTitle = new TextBox() { Location = new System.Drawing.Point(150, y), Size = new System.Drawing.Size(300, 23) };
+            y += 40;
+
+            // Input Survey Content Column
+            lblInputCol = new Label()
+            {
+                Text = "Input Survey Content Column",
+                Location = new System.Drawing.Point(20, y),
+                Size = new System.Drawing.Size(200, 23) // Increased width for full label
+            };
+            txtInputCol = new TextBox()
+            {
+                Location = new System.Drawing.Point(230, y), // Move textbox to the right of the label
+                Size = new System.Drawing.Size(40, 23),
+                MaxLength = 1,
+                Text = inputColChar.ToString()
+            };
+            txtInputCol.Text = inputColChar.ToString();
+            txtInputCol.TextChanged += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(txtInputCol.Text))
+                {
+                    inputColChar = txtInputCol.Text[0];
+                    inputCol = char.ToUpper(inputColChar) - 64;
+                }
+            };
+            y += 40;
+
+            // Short Question ID Prefix
+            lblQID = new Label()
+            {
+                Text = "Short Question ID Prefix",
+                Location = new System.Drawing.Point(20, y),
+                Size = new System.Drawing.Size(200, 23)
+            };
+            txtQID = new TextBox()
+            {
+                Location = new System.Drawing.Point(230, y),
+                Size = new System.Drawing.Size(100, 23)
+            };
+            txtQID.TextChanged += (s, e) => { qID = txtQID.Text; };
+            y += 40;
+
+            // Long Catalogue ID Prefix
+            lblCatID = new Label()
+            {
+                Text = "Long Catalogue ID Prefix",
+                Location = new System.Drawing.Point(20, y),
+                Size = new System.Drawing.Size(200, 23)
+            };
+            txtCatID = new TextBox()
+            {
+                Location = new System.Drawing.Point(230, y),
+                Size = new System.Drawing.Size(100, 23)
+            };
+            txtCatID.TextChanged += (s, e) => { catID = txtCatID.Text; };
+            y += 40;
+
+            // Add tooltips for the new labels
+            var toolTip = new ToolTip();
+            toolTip.SetToolTip(lblInputCol, "The column in the spreadsheet the program should read all content from.");
+            toolTip.SetToolTip(lblQID, "The prefix of the Short Question IDs (eg. MMSMQ).");
+            toolTip.SetToolTip(lblCatID, "The prefix of the long catalogue ID. Probably the short question ID, with the year appended (eg. MMSMQ25).");
 
             // Input file selection
-            lblInputFile = new Label() { Text = "Input Excel File:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 23) };
-            txtInputFile = new TextBox() { Location = new System.Drawing.Point(130, 60), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
-            btnSelectInput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, 59), Size = new System.Drawing.Size(85, 35) };
+            lblInputFile = new Label() { Text = "Input Excel File:", Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(100, 23) };
+            txtInputFile = new TextBox() { Location = new System.Drawing.Point(130, y), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
+            btnSelectInput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, y - 1), Size = new System.Drawing.Size(85, 35) };
             btnSelectInput.Click += BtnSelectInput_Click;
+            y += 40;
 
             // Template file selection
-            lblTemplateFile = new Label() { Text = "Template File:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 23) };
-            txtTemplateFile = new TextBox() { Location = new System.Drawing.Point(130, 100), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
-            btnSelectTemplate = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, 99), Size = new System.Drawing.Size(85, 35) };
+            lblTemplateFile = new Label() { Text = "Template File:", Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(100, 23) };
+            txtTemplateFile = new TextBox() { Location = new System.Drawing.Point(130, y), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
+            btnSelectTemplate = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, y - 1), Size = new System.Drawing.Size(85, 35) };
             btnSelectTemplate.Click += BtnSelectTemplate_Click;
+            y += 40;
 
             // Output folder selection
-            lblOutputFolder = new Label() { Text = "Output Folder:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 23) };
-            txtOutputFolder = new TextBox() { Location = new System.Drawing.Point(130, 140), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
-            btnSelectOutput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, 139), Size = new System.Drawing.Size(85, 35) };
+            lblOutputFolder = new Label() { Text = "Output Folder:", Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(100, 23) };
+            txtOutputFolder = new TextBox() { Location = new System.Drawing.Point(130, y), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
+            btnSelectOutput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, y - 1), Size = new System.Drawing.Size(85, 35) };
             btnSelectOutput.Click += BtnSelectOutput_Click;
+            y += 40;
 
             // Process button
-            btnProcess = new Button() { Text = "Process Files", Location = new System.Drawing.Point(250, 180), Size = new System.Drawing.Size(100, 30) };
+            btnProcess = new Button() { Text = "Process Files", Location = new System.Drawing.Point(250, y), Size = new System.Drawing.Size(100, 30) };
             btnProcess.Click += BtnProcess_Click;
+            y += 40;
 
             // Progress bar
-            progressBar = new ProgressBar() { Location = new System.Drawing.Point(20, 220), Size = new System.Drawing.Size(520, 23), Visible = false };
+            progressBar = new ProgressBar() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(520, 23), Visible = false };
+            y += 30;
 
             // Log text box
-            txtLog = new RichTextBox() { Location = new System.Drawing.Point(20, 250), Size = new System.Drawing.Size(520, 250), ReadOnly = true };
+            txtLog = new RichTextBox() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(520, 250), ReadOnly = true };
 
             // Add controls to form
             this.Controls.AddRange(new Control[] {
                 lblSurveyTitle, txtSurveyTitle,
+                lblInputCol, txtInputCol,
+                lblQID, txtQID,
+                lblCatID, txtCatID,
                 lblInputFile, txtInputFile, btnSelectInput,
                 lblTemplateFile, txtTemplateFile, btnSelectTemplate,
                 lblOutputFolder, txtOutputFolder, btnSelectOutput,
@@ -142,6 +226,25 @@ namespace SurveyProcessor
             if (string.IsNullOrEmpty(surveyTitle))
             {
                 MessageBox.Show("Please enter a survey title.", "Missing Survey Title", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(txtInputCol.Text.Trim()))
+            {
+                MessageBox.Show("Please enter the input survey content column.", "Missing Input Column", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(txtQID.Text.Trim()))
+            {
+                MessageBox.Show("Please enter the Short Question ID Prefix.", "Missing Question ID Prefix", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(txtCatID.Text.Trim()))
+            {
+                MessageBox.Show("Please enter the Long Catalogue ID Prefix.", "Missing Catalogue ID Prefix", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
             if (string.IsNullOrEmpty(inputFilePath) || string.IsNullOrEmpty(templateFilePath) || string.IsNullOrEmpty(outputFolderPath))
@@ -234,6 +337,7 @@ namespace SurveyProcessor
 
             ProcessingMode mode = ProcessingMode.Description;
 
+            int questionNo = 0;
             var colLength = inputSheet.Column(inputCol).LastCellUsed().Address.RowNumber;
             for (int row = 3; row <= colLength; row++)
             {
@@ -263,6 +367,32 @@ namespace SurveyProcessor
 
                     case ProcessingMode.Question:
                         // Question
+                        if (cell.Value.ToString().Contains('?'))
+                        {
+                            questionNo++;
+                            string q = questionNo.ToString("00");
+                            target.Value = cell.Value;
+                            target.Style.Font.Bold = true;
+                            
+                            templateSheet.Cell(templateRow, 9).Value = $"{catID}_{q}";
+                            templateSheet.Cell(templateRow, 10).Value = $"{qID}_{q}";
+
+                            // TextQuestion
+                            if (cell.CellBelow().Value.ToString().Contains("__"))
+                            {
+                                templateSheet.Cell(templateRow, 24).Value = "TextQuestion";
+                                target.CellBelow().Value = cell.CellBelow().Value;
+                                row++;
+                            }
+                            // Multiple tickboxes
+                            else if (cell.Value.ToString().ToLower().Contains("select"))
+                            {
+                                templateSheet.Cell(templateRow, 24).Value = "Tickboxes";
+                                
+                                // Iterate through options
+                            }
+                        }
+
                         break;
 
                     default:
