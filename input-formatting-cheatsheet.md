@@ -7,7 +7,6 @@ _Quick reference for formatting survey content in Excel_
 -   ✅ **Single column** input (default: Column C)
 -   ✅ **Sequential order**: Description → `consent` → Questions
 -   ✅ **One item per row** (questions, options, etc.)
--   ✅ **Empty rows** are automatically skipped
 
 ---
 

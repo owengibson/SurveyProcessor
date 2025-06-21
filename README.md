@@ -2,6 +2,8 @@
 
 A powerful tool for converting survey content from Excel spreadsheets into structured survey templates with automatic question type detection and formatting. Made for use by NCLS.
 
+**Cheatsheet for input survey formatting [here](input-formatting-cheatsheet.md)**
+
 ## Table of Contents
 
 -   [Overview](#overview)
@@ -56,7 +58,6 @@ Input Survey Flow:
 2. **Sequential Processing**: Content is processed row by row from top to bottom
 3. **Trigger Words**: "consent" switches from description to consent mode
 4. **Question Detection**: Questions are identified by containing a "?" character
-5. **Empty Rows**: Empty rows are skipped automatically
 
 ### Column Structure
 
@@ -69,11 +70,12 @@ Row | Column C Content
 4   | Consent form text
 5   | What is your name?         ← Text question
 6   | ___________________
-7   | What is your age?          ← Multiple choice
-8   | Under 18
-9   | 18-25
-10  | 26-35
-11  | Over 35
+7   |
+8   | What is your age?          ← Multiple choice
+9   | Under 18
+10  | 18-25
+11  | 26-35
+12  | Over 35
 ```
 
 ## Question Types & Examples
