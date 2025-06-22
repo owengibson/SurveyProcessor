@@ -23,7 +23,6 @@ The Survey Processor automatically detects different types of survey content and
 -   **Automatic Question Type Detection**: Identifies different question types based on content and formatting
 -   **Structured Output**: Generates question IDs, catalogue IDs, and type classifications
 -   **Multiple Question Types**: Supports descriptions, consent forms, text questions, multiple choice, tickboxes, and more
--   **Cross-Platform**: Available as both CLI (Mac/Linux/Windows) and WinForms (Windows) versions
 
 ## Question Type Detection
 
@@ -315,8 +314,6 @@ The application is built with a modular architecture using these key components:
 
 ## Usage
 
-### WinForms Application (Windows)
-
 1. **Launch** the application
 2. **Enter** survey details:
     - Survey Title
@@ -327,22 +324,6 @@ The application is built with a modular architecture using these key components:
 4. **Select** template Excel file
 5. **Choose** output folder
 6. **Click** "Process Files"
-
-### CLI Application (Mac/Linux/Windows)
-
-```bash
-dotnet run "Survey Title" C MMSMQ MMSMQ25 input.xlsx template.xlsx output_folder
-```
-
-**Parameters**:
-
--   `"Survey Title"` - Title for the survey (use quotes if it contains spaces)
--   `C` - Column letter to read from input file
--   `MMSMQ` - Short question ID prefix
--   `MMSMQ25` - Long catalogue ID prefix
--   `input.xlsx` - Source Excel file
--   `template.xlsx` - Template Excel file
--   `output_folder` - Output directory (optional)
 
 ## Best Practices
 
