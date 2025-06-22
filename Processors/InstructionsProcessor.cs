@@ -1,3 +1,5 @@
+using ClosedXML.Excel;
+
 namespace SurveyProcessor
 {
     public class InstructionsProcessor : IQuestionProcessor
@@ -44,7 +46,7 @@ namespace SurveyProcessor
                 }
             }
             
-            templateRow++;
+            // templateRow++;
             
             Logger.Log($"Instructions Question {questionNumber}: {question.SubQuestions.Count} sub-questions, {question.Options.Count} options each");
             

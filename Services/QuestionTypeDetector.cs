@@ -1,3 +1,5 @@
+using ClosedXML.Excel;
+
 namespace SurveyProcessor
 {
     // Question type detector
@@ -8,7 +10,7 @@ namespace SurveyProcessor
             string cellValue = cell.Value.ToString()?.Trim() ?? "";
             string nextValue = nextCell?.Value.ToString()?.Trim() ?? "";
 
-            if (currentMode == ProcessingMode.Description && 
+            if (currentMode == ProcessingMode.Description &&
                 cellValue.Equals(Constants.ConsentTrigger, StringComparison.OrdinalIgnoreCase))
             {
                 return QuestionType.Consent;
@@ -27,23 +29,23 @@ namespace SurveyProcessor
                     // Check if the cell after next is empty (indicating this is a text input, not an option)
                     var cellAfterNext = currentRow + 2 <= maxRow ? inputSheet.Cell(currentRow + 2, inputColumn) : null;
                     string cellAfterNextValue = cellAfterNext?.Value.ToString()?.Trim() ?? "";
-                    
+
                     if (string.IsNullOrWhiteSpace(cellAfterNextValue))
                     {
                         return QuestionType.TextQuestion;
                     }
                 }
-                
+
                 if (nextCell?.Style.Font.Bold == true)
                 {
                     return QuestionType.Instructions;
                 }
-                
+
                 if (cellValue.ToLower().Contains(Constants.SelectKeyword))
                 {
                     return QuestionType.MultipleChoice;
                 }
-                
+
                 return QuestionType.Tickboxes;
             }
 

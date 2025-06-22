@@ -1,3 +1,5 @@
+using ClosedXML.Excel;
+
 namespace SurveyProcessor
 {
     // Specific processors (same as CLI version)

@@ -7,8 +7,7 @@ using ClosedXML.Excel;
 
 namespace SurveyProcessor
 {
-    // Main Form (WinForms UI)
-    public class MainForm : Form
+        public class MainForm : Form
     {
         // Preferences
         private char inputColChar = 'C';
@@ -21,6 +20,10 @@ namespace SurveyProcessor
         private string surveyTitle = "";
         private string qID = "";
         private string catID = "";
+        
+        // Default files
+        private string defaultTemplatePath = "";
+        private string defaultInputPath = "";
 
         // UI Controls
         private Label lblInputFile;
@@ -40,6 +43,8 @@ namespace SurveyProcessor
         private Button btnSelectInput;
         private Button btnSelectTemplate;
         private Button btnSelectOutput;
+        private Button btnResetTemplate;
+        private Button btnResetInput;
         private Button btnProcess;
         private ProgressBar progressBar;
         private RichTextBox txtLog;
@@ -47,13 +52,32 @@ namespace SurveyProcessor
         public MainForm()
         {
             inputCol = char.ToUpper(inputColChar) - 64;
+            
+            // Extract default files from embedded resources
+            ExtractDefaultFiles();
+            
             InitializeComponent();
             Logger.SetLogTextBox(txtLog); // Connect logger to UI
+            
+            // Set default files
+            if (!string.IsNullOrEmpty(defaultInputPath))
+            {
+                inputFilePath = defaultInputPath;
+                txtInputFile.Text = "Example Input";
+                Logger.Log("Default input file loaded");
+            }
+            
+            if (!string.IsNullOrEmpty(defaultTemplatePath))
+            {
+                templateFilePath = defaultTemplatePath;
+                txtTemplateFile.Text = "Default Template";
+                Logger.Log("Default template loaded");
+            }
         }
 
         private void InitializeComponent()
         {
-            this.Size = new System.Drawing.Size(600, 650);
+            this.Size = new System.Drawing.Size(650, 650); // Increased width for Default button
             this.Text = "Excel Survey Processor";
             this.StartPosition = FormStartPosition.CenterScreen;
 
@@ -129,6 +153,17 @@ namespace SurveyProcessor
             txtInputFile = new TextBox() { Location = new System.Drawing.Point(130, y), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
             btnSelectInput = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, y - 1), Size = new System.Drawing.Size(85, 35) };
             btnSelectInput.Click += BtnSelectInput_Click;
+            
+            // Add reset to default input button
+            btnResetInput = new Button() { Text = "Default", Location = new System.Drawing.Point(530, y - 1), Size = new System.Drawing.Size(55, 35) };
+            btnResetInput.Click += (s, e) => {
+                if (!string.IsNullOrEmpty(defaultInputPath))
+                {
+                    inputFilePath = defaultInputPath;
+                    txtInputFile.Text = "Example Input";
+                    Logger.Log("Reset to default input file");
+                }
+            };
             y += 40;
 
             // Template file selection
@@ -136,6 +171,17 @@ namespace SurveyProcessor
             txtTemplateFile = new TextBox() { Location = new System.Drawing.Point(130, y), Size = new System.Drawing.Size(300, 23), ReadOnly = true };
             btnSelectTemplate = new Button() { Text = "Browse", Location = new System.Drawing.Point(440, y - 1), Size = new System.Drawing.Size(85, 35) };
             btnSelectTemplate.Click += BtnSelectTemplate_Click;
+            
+            // Add reset to default button
+            btnResetTemplate = new Button() { Text = "Default", Location = new System.Drawing.Point(530, y - 1), Size = new System.Drawing.Size(55, 35) };
+            btnResetTemplate.Click += (s, e) => {
+                if (!string.IsNullOrEmpty(defaultTemplatePath))
+                {
+                    templateFilePath = defaultTemplatePath;
+                    txtTemplateFile.Text = "Default Template";
+                    Logger.Log("Reset to default template");
+                }
+            };
             y += 40;
 
             // Output folder selection
@@ -151,11 +197,11 @@ namespace SurveyProcessor
             y += 40;
 
             // Progress bar
-            progressBar = new ProgressBar() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(520, 23), Visible = false };
+            progressBar = new ProgressBar() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(570, 23), Visible = false };
             y += 30;
 
             // Log text box
-            txtLog = new RichTextBox() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(520, 250), ReadOnly = true };
+            txtLog = new RichTextBox() { Location = new System.Drawing.Point(20, y), Size = new System.Drawing.Size(570, 250), ReadOnly = true };
 
             // Add controls to form
             this.Controls.AddRange(new Control[] {
@@ -163,8 +209,8 @@ namespace SurveyProcessor
                 lblInputCol, txtInputCol,
                 lblQID, txtQID,
                 lblCatID, txtCatID,
-                lblInputFile, txtInputFile, btnSelectInput,
-                lblTemplateFile, txtTemplateFile, btnSelectTemplate,
+                lblInputFile, txtInputFile, btnSelectInput, btnResetInput,
+                lblTemplateFile, txtTemplateFile, btnSelectTemplate, btnResetTemplate,
                 lblOutputFolder, txtOutputFolder, btnSelectOutput,
                 btnProcess, progressBar, txtLog
             });
@@ -178,8 +224,8 @@ namespace SurveyProcessor
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     inputFilePath = openFileDialog.FileName;
-                    txtInputFile.Text = inputFilePath;
-                    Logger.Log($"Input file selected: {Path.GetFileName(inputFilePath)}");
+                    txtInputFile.Text = Path.GetFileName(inputFilePath);
+                    Logger.Log($"Custom input file selected: {Path.GetFileName(inputFilePath)}");
                 }
             }
         }
@@ -192,8 +238,8 @@ namespace SurveyProcessor
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     templateFilePath = openFileDialog.FileName;
-                    txtTemplateFile.Text = templateFilePath;
-                    Logger.Log($"Template file selected: {Path.GetFileName(templateFilePath)}");
+                    txtTemplateFile.Text = Path.GetFileName(templateFilePath);
+                    Logger.Log($"Custom template selected: {Path.GetFileName(templateFilePath)}");
                 }
             }
         }
@@ -266,6 +312,60 @@ namespace SurveyProcessor
             {
                 progressBar.Visible = false;
                 btnProcess.Enabled = true;
+            }
+        }
+
+        private void ExtractDefaultFiles()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                
+                // Extract default template
+                var templateResourceName = "SurveyProcessor.Resources.DefaultTemplate.xlsx";
+                using (Stream stream = assembly.GetManifestResourceStream(templateResourceName))
+                {
+                    if (stream != null)
+                    {
+                        defaultTemplatePath = Path.Combine(Path.GetTempPath(), "SurveyProcessor_DefaultTemplate.xlsx");
+                        
+                        using (var fileStream = File.Create(defaultTemplatePath))
+                        {
+                            stream.CopyTo(fileStream);
+                        }
+                        
+                        Logger.Log("Default template extracted successfully");
+                    }
+                    else
+                    {
+                        Logger.Log("Warning: Default template resource not found");
+                    }
+                }
+                
+                // Extract default input file
+                var inputResourceName = "SurveyProcessor.Resources.ExampleInput.xlsx";
+                using (Stream stream = assembly.GetManifestResourceStream(inputResourceName))
+                {
+                    if (stream != null)
+                    {
+                        defaultInputPath = Path.Combine(Path.GetTempPath(), "SurveyProcessor_ExampleInput.xlsx");
+                        
+                        using (var fileStream = File.Create(defaultInputPath))
+                        {
+                            stream.CopyTo(fileStream);
+                        }
+                        
+                        Logger.Log("Default input file extracted successfully");
+                    }
+                    else
+                    {
+                        Logger.Log("Warning: Default input file resource not found");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Warning: Could not extract default files: {ex.Message}");
             }
         }
     }
