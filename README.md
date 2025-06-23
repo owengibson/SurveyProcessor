@@ -51,6 +51,8 @@ Input Survey Flow:
 
 ## Input Survey Formatting
 
+**NOTE: Survey content will be read from row 3 onwards. Any data in rows 1-2 will not be processed.**
+
 ### Basic Rules
 
 1. **Single Column Input**: All content should be in one column (default: Column C)
